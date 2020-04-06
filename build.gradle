@@ -1,0 +1,49 @@
+buildscript {
+    repositories {
+       jcenter()
+    }
+}
+
+plugins {
+    id 'java'
+    id 'idea'
+
+    // Applies mandatory checkstyle rules on each build
+    id 'checkstyle'
+}
+
+apply plugin: 'jacoco'
+
+group = 'xyz.devfortress.functional.pebels'
+version = '0.1.0-SNAPSHOT'
+sourceCompatibility = '1.8'
+
+repositories {
+    jcenter()
+}
+
+checkstyle {
+    toolVersion = "8.21"
+    ignoreFailures = false
+    configFile = file("${rootProject.projectDir}/configuration/mandatory-checkstyle.xml")
+    reportsDir = file("${project.projectDir}/build/reports/checkstyle")
+}
+
+tasks.withType(Checkstyle) {
+    reports {
+        xml.enabled = false
+        html.enabled = true
+    }
+}
+
+// Generate jacoco html report right after running tests.
+test.finalizedBy jacocoTestReport
+
+test {
+    useTestNG()
+}
+
+dependencies {
+    testImplementation 'org.testng:testng:7.1.0'
+    testImplementation 'org.assertj:assertj-core:3.15.0'
+}
