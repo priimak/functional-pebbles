@@ -7,6 +7,8 @@ import java.rmi.AccessException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static xyz.devfortress.functional.pebbles.Try.Failure;
+import static xyz.devfortress.functional.pebbles.Try.Success;
 
 public class TestTry {
     @Test
@@ -28,9 +30,13 @@ public class TestTry {
         assertThat(failureAndAgain.isFailure()).isTrue();
         assertThatThrownBy(failureAndAgain::get).isInstanceOf(AccessException.class);
 
-        Try<String> successHelloWorld = successHello.flatMap(x -> Try.success(x + " World"));
+        Try<String> successHelloWorld = successHello.flatMap(x -> Success(x + " World"));
         assertThat(successHelloWorld.isSuccess()).isTrue();
         assertThat(successHelloWorld.isFailure()).isFalse();
+
+        Try<String> failedHelloWorld = successHello.flatMap(x -> Failure(new Exception()));
+        assertThat(failedHelloWorld.isSuccess()).isFalse();
+        assertThat(failedHelloWorld.isFailure()).isTrue();
 
         assertThat(
             successHello.<String>visit(

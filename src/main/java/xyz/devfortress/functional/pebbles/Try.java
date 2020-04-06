@@ -66,10 +66,36 @@ public abstract class Try<T> {
      */
     public abstract T get() throws Throwable;
 
+    /**
+     * Map value contained in this Try success instance by applying function {@code f} to this value and wrapping result
+     * into new instance of {@code Try<A>} object. If this Try instance represents failure then this function is no-op
+     * and function {@code f} is never called.
+     *
+     * @param f function to be applied to the current value contained in the Try success instance
+     * @param <A> type of value returned by function {@code f}
+     * @return result computing function {@code f} wrapped into {@link Try} instance or original failure
+     */
     public abstract <A> Try<A> map(ThrowingFunction<T, A> f);
 
+    /**
+     * Map value contained in this Try success instance by applying function {@code f} to this value and returning it.
+     * If this Try instance represents failure then this function is a no-op, failure is returned and function {@code f}
+     * is never called.
+     *
+     * @param f function to be applied to the current value contained in the Try success instance
+     * @param <A> type of value enclosed in the returned {@code Try} instance when function {@code f} is called
+     * @return result of calling function  {@code f} or original failure
+     */
     public abstract <A> Try<A> flatMap(Function<T, Try<A>> f);
 
+    /**
+     * Apply visitor to this instance of {@code Try}.
+     *
+     * @param onSuccess function to be called if this instance of {@code Try} represents success
+     * @param onFailure function to be called if this instance of {@code Try} represents failure
+     * @param <A> type of result returned by {@code onSuccess} and {@code onFailure} functions
+     * @return result of calling either {@code onSuccess} and {@code onFailure} functions
+     */
     public abstract <A> A visit(Function<T, A> onSuccess, Function<Throwable, A> onFailure);
 
     /**
@@ -77,6 +103,32 @@ public abstract class Try<T> {
      */
     public <A> Try<A> andThen(ThrowingFunction<T, A> f) {
         return map(f);
+    }
+
+    /**
+     * Convenience method to be used with static import that mimics behavior of case classes in Scala. It can be used
+     * to create instances of successful computation instead of {@link Try#success(Object)} like so
+     * <pre>
+     *     import static xyz.devfortress.functional.pebbles.Try.Success;
+     *
+     *     result.flatMap(value -> Success(value + " World"));
+     * </pre>
+     */
+    public static <A> Try<A> Success(A value) {
+        return new Success<>(value);
+    }
+
+    /**
+     * Convenience method to be used with static import that mimics behavior of case classes in Scala. It can be used
+     * to create instances of successful computation instead of {@link Try#failure(Throwable)} like so
+     * <pre>
+     *     import static xyz.devfortress.functional.pebbles.Try.Failure;
+     *
+     *     result.flatMap(value -> Failure(new Exception()));
+     * </pre>
+     */
+    public static <A> Try<A> Failure(Throwable error) {
+        return new Failure<>(error);
     }
 
     /**
