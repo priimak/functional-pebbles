@@ -17,5 +17,9 @@ public class TestTuple {
         assertThat(x).isNotEqualTo(null);
         assertThat(x._1).isEqualTo(1);
         assertThat(x._2).isEqualTo("Foo");
+
+        assertThat(x.hashCode()).isEqualTo(Tuple(1, "Foo").hashCode());
+        assertThat(x.hashCode()).isNotEqualTo(Tuple(2, "Foo").hashCode());
+        assertThat(x.hashCode()).isNotEqualTo(Tuple(1, "Oof").hashCode());
     }
 }
