@@ -1,11 +1,19 @@
 package xyz.devfortress.functional.pebbles;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collector;
 
 /**
  * Class that represents the completion of a computation, which may either be a value of type {@code T} in case of
@@ -22,6 +30,18 @@ import java.util.function.Supplier;
  * @param <T> type of successfully computed value.
  */
 public abstract class Try<T> {
+    /**
+     * A collector that will partition and collect {@code Stream} of {@code Try}s into a {@link Tuple} containing
+     * {@code List} of values contained in {@code Success(value)} and a {@code List} of {@link Throwable} contained
+     * in {@code Failure(Throwable)} which are found in the original stream.
+     *
+     * @param <T> type contained in the {@link Try}s in the steam
+     * @return collector for {@code Tuple<List<T>, List<Throwable>>}
+     */
+    public static <T> Collector<Try<T>, ?, Tuple<List<T>, List<Throwable>>> partition() {
+        return new PartitionCollector<>();
+    }
+
     /**
      * Returns a new instance representing successful computation with the given value.
      *
@@ -650,4 +670,40 @@ public abstract class Try<T> {
             return visitor.visitFailure(error, context);
         }
     }
+
+    private static class PartitionCollector<T> implements
+            Collector<Try<T>, Tuple<ArrayList<T>, ArrayList<Throwable>>, Tuple<List<T>, List<Throwable>>> {
+        private static final Set<Collector.Characteristics> CH_ID
+            = Collections.unmodifiableSet(EnumSet.of(Collector.Characteristics.IDENTITY_FINISH));
+
+        @Override
+        public Supplier<Tuple<ArrayList<T>, ArrayList<Throwable>>> supplier() {
+            return () -> new Tuple<>(new ArrayList<T>(), new ArrayList<Throwable>());
+        }
+
+        @Override
+        public BiConsumer<Tuple<ArrayList<T>, ArrayList<Throwable>>, Try<T>> accumulator() {
+            return (acc, tVal) -> tVal.accept(acc._1::add, acc._2::add);
+        }
+
+        @Override
+        public BinaryOperator<Tuple<ArrayList<T>, ArrayList<Throwable>>> combiner() {
+            return (left, right) -> {
+                left._1.addAll(right._1);
+                left._2.addAll(right._2);
+                return left;
+            };
+        }
+
+        @Override
+        public Function<Tuple<ArrayList<T>, ArrayList<Throwable>>, Tuple<List<T>, List<Throwable>>> finisher() {
+            return acc -> new Tuple<>(Collections.unmodifiableList(acc._1), Collections.unmodifiableList(acc._2));
+        }
+
+        @Override
+        public Set<Characteristics> characteristics() {
+            return CH_ID;
+        }
+    }
+
 }

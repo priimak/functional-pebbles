@@ -29,6 +29,11 @@ public final class Tuple<L, R> {
     }
 
     @Override
+    public String toString() {
+        return "(" + _1 + ", " + _2 + ')';
+    }
+
+    @Override
     public boolean equals(Object otherObject) {
         if (this == otherObject) {
             return true;
@@ -66,5 +71,19 @@ public final class Tuple<L, R> {
     @SuppressWarnings("MethodNameSameAsClassName")
     public static <A, B> Tuple<A, B> Tuple(A leftValue, B rightValue) {
         return new Tuple<>(leftValue, rightValue);
+    }
+
+    /**
+     * Returns left/first element from the tuple.
+     */
+    public static <A> A left(Tuple<A, ?> tuple) {
+        return tuple._1;
+    }
+
+    /**
+     * Returns right/second element from the tuple.
+     */
+    public static <B> B right(Tuple<?, B> tuple) {
+        return tuple._2;
     }
 }
