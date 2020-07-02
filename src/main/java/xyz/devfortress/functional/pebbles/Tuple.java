@@ -1,6 +1,7 @@
 package xyz.devfortress.functional.pebbles;
 
 import java.util.Objects;
+import java.util.function.Consumer;
 
 /**
  * Class that encapsulated pair of values of type L and R. This object will properly handle both {@code equals(Object)}
@@ -26,6 +27,17 @@ public final class Tuple<L, R> {
     public Tuple(L _1, R _2) {
         this._1 = _1;
         this._2 = _2;
+    }
+
+    /**
+     * Calls consumers first on first/left value contained in this Tuple and then on second/right value.
+     *
+     * @param leftValueConsumer consumer to be called on left value
+     * @param rightValueConsumer consumer to be called on left value
+     */
+    public void forEach(Consumer<L> leftValueConsumer, Consumer<R> rightValueConsumer) {
+        leftValueConsumer.accept(_1);
+        rightValueConsumer.accept(_2);
     }
 
     @Override
