@@ -1,7 +1,9 @@
 package xyz.devfortress.functional.pebbles;
 
 import java.util.Objects;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Class that encapsulated pair of values of type L and R. This object will properly handle both {@code equals(Object)}
@@ -32,12 +34,24 @@ public final class Tuple<L, R> {
     /**
      * Calls consumers first on first/left value contained in this Tuple and then on second/right value.
      *
-     * @param leftValueConsumer consumer to be called on left value
-     * @param rightValueConsumer consumer to be called on left value
+     * @param f consumer to be called on first/left value
+     * @param g consumer to be called on second/right value
      */
-    public void forEach(Consumer<L> leftValueConsumer, Consumer<R> rightValueConsumer) {
-        leftValueConsumer.accept(_1);
-        rightValueConsumer.accept(_2);
+    public void forEach(Consumer<L> f, Consumer<R> g) {
+        f.accept(_1);
+        g.accept(_2);
+    }
+
+    public <A, B> Tuple<A, B> map(Function<L, A> f, Function<R, B> g) {
+        return new Tuple<>(f.apply(_1), g.apply(_2));
+    }
+
+    public <A, B> Tuple<A, B> flatMap(BiFunction<L, R, Tuple<A, B>> f) {
+        return f.apply(_1, _2);
+    }
+
+    public <A> A transform(BiFunction<L, R, A> f) {
+        return f.apply(_1, _2);
     }
 
     @Override

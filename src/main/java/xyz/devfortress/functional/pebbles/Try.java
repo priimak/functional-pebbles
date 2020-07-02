@@ -31,6 +31,17 @@ import java.util.stream.Collector;
  */
 public abstract class Try<T> {
     /**
+     * Turns any function lambda function that accepts argument of type X and returns argument of
+     * type Y (i.e. {@code X => Y}) and can throw an exception into a function that accepts X and
+     * returns {@code Try<Y>} (i.e. {@code X => Try<Y>}). Such operation is known as "lifting".
+     *
+     * @param f function to be lifted from {@code X => Y} into {@code X => Try<Y>}
+     */
+    public static <X, Y> Function<X, Try<Y>> lift(ThrowingFunction<X, Y> f) {
+        return x -> Try.eval(() -> f.apply(x));
+    }
+
+    /**
      * A collector that will partition and collect {@code Stream} of {@code Try}s into a {@link Tuple} containing
      * {@code List} of values contained in {@code Success(value)} and a {@code List} of {@link Throwable} contained
      * in {@code Failure(Throwable)} which are found in the original stream.
