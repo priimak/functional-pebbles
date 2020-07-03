@@ -9,6 +9,9 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+/**
+ * Utility methods to aid in use of java collections.
+ */
 public final class Collectionz {
     private Collectionz() {
         throw new AssertionError();
