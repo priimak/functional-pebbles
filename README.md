@@ -1,4 +1,6 @@
+![Functional Pebbles Logo](functional-pebbles.jpg)
 # Functional Pebbles for Java
+[![License](https://img.shields.io/:license-MIT-blue.svg)](https://raw.githubusercontent.com/priimak/functional-pebbles/master/LICENSE)
 
 1. _Try_ monad class
 
