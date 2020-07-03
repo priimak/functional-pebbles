@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static xyz.devfortress.functional.pebbles.Try.Failure;
 import static xyz.devfortress.functional.pebbles.Try.Success;
 import static xyz.devfortress.functional.pebbles.Try.Try;
+import static xyz.devfortress.functional.pebbles.Tuple.Tuple;
 
 public class TestTry {
     @Test
@@ -123,6 +124,13 @@ public class TestTry {
                 error -> error.getClass().getSimpleName()
             )
         ).isEqualTo("AccessException");
+
+        ThrowingFunction<Tuple<Integer, Integer>, Integer> div = nums -> nums._1 / nums._2;
+        assertThatThrownBy(() -> div.apply(Tuple(7, 0))).isInstanceOf(ArithmeticException.class);
+
+        Function<Tuple<Integer, Integer>, Try<Integer>> safeDiv = Try.lift(div);
+        assertThat(safeDiv.apply(Tuple(7, 0)).isFailure());
+        assertThat(safeDiv.apply(Tuple(7, 3))).isEqualTo(Success(2));
     }
 
     @Test
@@ -299,5 +307,16 @@ public class TestTry {
                     error -> error.getClass().getSimpleName() + "(" + error.getMessage() + ")"
                 )
         ).isEqualTo("NullPointerException()");
+    }
+
+    @Test
+    public void testCollectors() {
+        List<Try<Integer>> list = Arrays.asList(Success(7), Failure(new IllegalStateException()), Success(8));
+        assertThat(list.stream().collect(Try.valuesCollector())).isEqualTo(Arrays.asList(7, 8));
+
+        Tuple<List<Integer>, List<Throwable>> result = list.stream().collect(Try.partition());
+        assertThat(result._1).isEqualTo(Arrays.asList(7, 8));
+        assertThat(result._2.size()).isEqualTo(1);
+        assertThat(result._2.get(0)).isInstanceOf(IllegalStateException.class);
     }
 }

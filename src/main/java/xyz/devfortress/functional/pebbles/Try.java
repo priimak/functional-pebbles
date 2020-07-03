@@ -2,7 +2,6 @@ package xyz.devfortress.functional.pebbles;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -51,6 +50,17 @@ public abstract class Try<T> {
      */
     public static <T> Collector<Try<T>, ?, Tuple<List<T>, List<Throwable>>> partition() {
         return new PartitionCollector<>();
+    }
+
+    /**
+     * A collector that will collect values contained in the {@code Success(value)} elements in the original
+     * stream of {@link Try}s.
+     *
+     * @param <T> type contained in the {@link Try}s in the steam
+     * @return collector for {@code List<T>}
+     */
+    public static <T> Collector<Try<T>, ?, List<T>> valuesCollector() {
+        return new ValuesCollector<>();
     }
 
     /**
@@ -684,9 +694,6 @@ public abstract class Try<T> {
 
     private static class PartitionCollector<T> implements
             Collector<Try<T>, Tuple<ArrayList<T>, ArrayList<Throwable>>, Tuple<List<T>, List<Throwable>>> {
-        private static final Set<Collector.Characteristics> CH_ID
-            = Collections.unmodifiableSet(EnumSet.of(Collector.Characteristics.IDENTITY_FINISH));
-
         @Override
         public Supplier<Tuple<ArrayList<T>, ArrayList<Throwable>>> supplier() {
             return () -> new Tuple<>(new ArrayList<T>(), new ArrayList<Throwable>());
@@ -713,8 +720,37 @@ public abstract class Try<T> {
 
         @Override
         public Set<Characteristics> characteristics() {
-            return CH_ID;
+            return Collections.emptySet();
         }
     }
 
+    private static class ValuesCollector<T> implements Collector<Try<T>, ArrayList<T>, List<T>> {
+        @Override
+        public Supplier<ArrayList<T>> supplier() {
+            return ArrayList::new;
+        }
+
+        @Override
+        public BiConsumer<ArrayList<T>, Try<T>> accumulator() {
+            return (acc, tVal) -> tVal.accept(acc::add, error -> { });
+        }
+
+        @Override
+        public BinaryOperator<ArrayList<T>> combiner() {
+            return (left, right) -> {
+                left.addAll(right);
+                return left;
+            };
+        }
+
+        @Override
+        public Function<ArrayList<T>, List<T>> finisher() {
+            return Collections::unmodifiableList;
+        }
+
+        @Override
+        public Set<Characteristics> characteristics() {
+            return Collections.emptySet();
+        }
+    }
 }
