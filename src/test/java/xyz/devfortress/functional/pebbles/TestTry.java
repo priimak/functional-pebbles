@@ -12,6 +12,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -49,6 +50,8 @@ public class TestTry {
         assertThat(successHello.orElse(Failure(new IllegalStateException()))).isEqualTo(Success("Hello"));
         assertThat(successHello.map(value -> "Aloha")).isEqualTo(Success("Aloha"));
         assertThat(successHello.<String>fold(error -> "error", success -> "Great success")).isEqualTo("Great success");
+        assertThat(successHello.successStream().collect(Collectors.toList())).isEqualTo(Arrays.asList("Hello"));
+        assertThat(successHello.failureStream().collect(Collectors.toList())).isEmpty();
 
         AtomicReference<String> acc = new AtomicReference<>("");
         successHello.accept(success -> acc.set("success"), error -> acc.set("error"));
@@ -66,6 +69,8 @@ public class TestTry {
         assertThat(failedHello.failed() == failedHello).isTrue();
         assertThat(failedHello.recover(error -> "All clear")).isEqualTo(Success("All clear"));
         assertThat(failedHello.orElse(Success("Mahala"))).isEqualTo(Success("Mahala"));
+        assertThat(failedHello.successStream().collect(Collectors.toList())).isEmpty();
+        assertThat(failedHello.failureStream().collect(Collectors.toList()).size()).isEqualTo(1);
 
         acc.set("");
         failedHello.accept(success -> acc.set("success"), error -> acc.set("error"));

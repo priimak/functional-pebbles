@@ -13,6 +13,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
+import java.util.stream.Stream;
 
 /**
  * Class that represents the completion of a computation, which may either be a value of type {@code T} in case of
@@ -26,6 +27,7 @@ import java.util.stream.Collector;
  * {@code equals(...)} on {@code Failure} will always returns false unless it is tested against itself.
  * Thus Try should never be used as a key in hash maps or in any other cases where these methods are important.
  * </p>
+ *
  * @param <T> type of successfully computed value.
  */
 public abstract class Try<T> {
@@ -35,8 +37,9 @@ public abstract class Try<T> {
      * returns {@code Try<Y>} (i.e. {@code X => Try<Y>}). Such operation is known as "lifting".
      *
      * @param f function to be lifted from {@code X => Y} into {@code X => Try<Y>}
+     * @return {@code Function<X, Try<Y>>} which is a same as {@code TryFunction<X, Y>}
      */
-    public static <X, Y> Function<X, Try<Y>> lift(ThrowingFunction<X, Y> f) {
+    public static <X, Y> TryFunction<X, Y> lift(ThrowingFunction<X, Y> f) {
         return x -> Try.eval(() -> f.apply(x));
     }
 
@@ -67,7 +70,7 @@ public abstract class Try<T> {
      * Returns a new instance representing successful computation with the given value.
      *
      * @param value the value
-     * @param <T> type of successfully computed value
+     * @param <T>   type of successfully computed value
      */
     public static <T> Try<T> success(T value) {
         return new Success<>(value);
@@ -77,19 +80,30 @@ public abstract class Try<T> {
      * Returns a new instance representing failed computation with the given {@link Throwable}.
      *
      * @param throwable the {@link Throwable} instance
-     * @param <T> type of successfully computed value
+     * @param <T>       type of successfully computed value
      */
     public static <T> Try<T> failure(Throwable throwable) {
         return new Failure<>(throwable);
     }
 
-    private Try() { }
+    private Try() {
+    }
 
     /**
      * Returns empty {@code Optional} if this is a {@code Failure} or {@code Optional.of(value)} if this
      * is a Success.
      */
     public abstract Optional<T> toOptional();
+
+    /**
+     * Return stream of result if Success and empty stream otherwise.
+     */
+    public abstract Stream<T> successStream();
+
+    /**
+     * Return stream of error (Throwable) if Failure and empty stream otherwise.
+     */
+    public abstract Stream<Throwable> failureStream();
 
     /**
      * Converts {@code Optional} into a [@code Success} if it contains value
@@ -196,7 +210,7 @@ public abstract class Try<T> {
      * Note that instances of {@link RuntimeException} and {@link Error} exceptions will not be captured and will be
      * will be allowed to propagate.
      *
-     * @param f supplier to evaluate
+     * @param f   supplier to evaluate
      * @param <T> type of the successful result
      * @return instance of {@link Try} that encapsulates result of the computation
      */
@@ -232,7 +246,6 @@ public abstract class Try<T> {
      *
      *     Try(() -> { return ...; })
      * </pre>
-     *
      */
     @SuppressWarnings("MethodNameSameAsClassName")
     public static <T> Try<T> Try(ThrowingSupplier<T> f) {
@@ -272,7 +285,7 @@ public abstract class Try<T> {
      * if thrown in {@code f(...)} they will be re-thrown out of the {@code map(...)} call.
      * Exception {@code InterruptedException} will be wrapped into {@link RuntimeException}.
      *
-     * @param f function to be applied to the current value contained in the Try success instance
+     * @param f   function to be applied to the current value contained in the Try success instance
      * @param <A> type of value returned by function {@code f}
      * @return result computing function {@code f} wrapped into {@link Try} instance or original failure
      */
@@ -283,7 +296,7 @@ public abstract class Try<T> {
      * If this Try instance represents failure then this function is a no-op, failure is returned and function {@code f}
      * is never called.
      *
-     * @param f function to be applied to the current value contained in the Try success instance
+     * @param f   function to be applied to the current value contained in the Try success instance
      * @param <A> type of value enclosed in the returned {@code Try} instance when function {@code f} is called
      * @return result of calling function  {@code f} or original failure
      */
@@ -294,13 +307,13 @@ public abstract class Try<T> {
      *
      * @param onSuccess function to be called if this instance of {@code Try} represents success
      * @param onFailure function to be called if this instance of {@code Try} represents failure
-     * @param <A> type of result returned by {@code onSuccess} and {@code onFailure} functions
+     * @param <A>       type of result returned by {@code onSuccess} and {@code onFailure} functions
      * @return result of calling either {@code onSuccess} and {@code onFailure} functions
      */
     public abstract <A> A transform(Function<T, A> onSuccess, Function<Throwable, A> onFailure);
 
     /**
-     * Accepts this instance of {@code Try} into either {@code onSuccess} consumer of {@codo Success} containing
+     * Accepts this instance of {@code Try} into either {@code onSuccess} consumer of {@code Success} containing
      * value or into {@code onFailure} containing error.
      */
     public abstract void accept(Consumer<T> onSuccess, Consumer<Throwable> onFailure);
@@ -379,6 +392,16 @@ public abstract class Try<T> {
         @Override
         public Optional<T> toOptional() {
             return Optional.of(value);
+        }
+
+        @Override
+        public Stream<T> successStream() {
+            return Stream.of(value);
+        }
+
+        @Override
+        public Stream<Throwable> failureStream() {
+            return Stream.empty();
         }
 
         @Override
@@ -558,6 +581,16 @@ public abstract class Try<T> {
         }
 
         @Override
+        public Stream<T> successStream() {
+            return Stream.empty();
+        }
+
+        @Override
+        public Stream<Throwable> failureStream() {
+            return Stream.of(error);
+        }
+
+        @Override
         public <A> A fold(Function<Throwable, A> fa, ThrowingFunction<T, A> fb) {
             return fa.apply(error);
         }
@@ -693,7 +726,7 @@ public abstract class Try<T> {
     }
 
     private static class PartitionCollector<T> implements
-            Collector<Try<T>, Tuple<ArrayList<T>, ArrayList<Throwable>>, Tuple<List<T>, List<Throwable>>> {
+        Collector<Try<T>, Tuple<ArrayList<T>, ArrayList<Throwable>>, Tuple<List<T>, List<Throwable>>> {
         @Override
         public Supplier<Tuple<ArrayList<T>, ArrayList<Throwable>>> supplier() {
             return () -> new Tuple<>(new ArrayList<T>(), new ArrayList<Throwable>());
