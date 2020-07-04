@@ -18,7 +18,7 @@ plugins {
 apply plugin: 'jacoco'
 
 group = 'xyz.devfortress.functional.pebbles'
-version = '1.0.0'
+version = '1.0.1-SNAPSHOT'
 sourceCompatibility = '1.8'
 
 repositories {
@@ -46,7 +46,7 @@ publishing {
         mavenJava(MavenPublication) {
             groupId 'xyz.devfortress.functional.pebbles'
             artifactId 'functional-pebbles-core'
-            version '1.0.0'
+            version '1.0.1-SNAPSHOT'
 
             from components.java
 
