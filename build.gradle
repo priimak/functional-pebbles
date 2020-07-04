@@ -18,7 +18,7 @@ plugins {
 apply plugin: 'jacoco'
 
 group = 'xyz.devfortress.functional.pebbles'
-version = '0.1.0-SNAPSHOT'
+version = '1.0.0'
 sourceCompatibility = '1.8'
 
 repositories {
