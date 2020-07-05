@@ -151,7 +151,7 @@ def customizePom(pom) {
             name 'Functional Pebbles'
             url 'https://github.com/priimak/functional-pebbles'
             organization {
-                name 'com.github.priimak'
+                name 'xyz.devfortress'
                 url 'https://github.com/priimak'
             }
             issueManagement {
