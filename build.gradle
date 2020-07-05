@@ -10,15 +10,15 @@ plugins {
 
     // Applies mandatory checkstyle rules on each build
     id 'checkstyle'
+    id 'jacoco'
 
     id 'maven-publish'
     id 'signing'
+    id "com.dorongold.task-tree" version "1.5"
 }
 
-apply plugin: 'jacoco'
-
 group = 'xyz.devfortress.functional.pebbles'
-version = '1.0.1-SNAPSHOT'
+version = '1.1.0-SNAPSHOT'
 sourceCompatibility = '1.8'
 
 repositories {
@@ -36,25 +36,64 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
 }
 
 artifacts {
-    archives jar
     archives sourceJar
     archives javadocJar
+}
+
+signing {
+    sign configurations.archives
+}
+
+gradle.taskGraph.whenReady { graph ->
+    if (graph.hasTask(assemble)) {
+        tasks.withType(Sign){
+            enabled = false
+        }
+    }
 }
 
 publishing {
     publications {
         mavenJava(MavenPublication) {
+            customizePom(pom)
+
             groupId 'xyz.devfortress.functional.pebbles'
             artifactId 'functional-pebbles-core'
-            version '1.0.1-SNAPSHOT'
+            version '1.1.0'
 
             from components.java
+
+
+            // create the sign pom artifact
+            pom.withXml {
+                def pomFile = file("${project.buildDir}/generated-pom.xml")
+                writeTo(pomFile)
+                def pomAscFile = signing.sign(pomFile).signatureFiles[0]
+                artifact(pomAscFile) {
+                    classifier = null
+                    extension = 'pom.asc'
+                }
+            }
 
             artifact(sourceJar) {
                 classifier = 'sources'
             }
+
             artifact(javadocJar) {
                 classifier = 'javadoc'
+            }
+
+            // create the signed artifacts
+            project.tasks.signArchives.signatureFiles.each {
+                artifact(it) {
+                    def matcher = it.file =~ /-(sources|javadoc)\.jar\.asc$/
+                    if (matcher.find()) {
+                        classifier = matcher.group(1)
+                    } else {
+                        classifier = null
+                    }
+                    extension = 'jar.asc'
+                }
             }
         }
     }
@@ -93,4 +132,58 @@ test {
 dependencies {
     testImplementation 'org.testng:testng:7.1.0'
     testImplementation 'org.assertj:assertj-core:3.15.0'
+}
+
+def customizePom(pom) {
+    pom.withXml {
+        def root = asNode()
+
+        // eliminate test-scoped dependencies (no need in maven central POMs)
+        root.dependencies.removeAll { dep ->
+            dep.scope == "test"
+        }
+
+        // add all items necessary for maven central publication
+        root.children().last() + {
+            resolveStrategy = Closure.DELEGATE_FIRST
+
+            description 'Tools for functional programming in Java'
+            name 'Functional Pebbles'
+            url 'https://github.com/priimak/functional-pebbles'
+            organization {
+                name 'com.github.priimak'
+                url 'https://github.com/priimak'
+            }
+            issueManagement {
+                system 'GitHub'
+                url 'https://github.com/priimak/functional-pebbles/issues'
+            }
+            licenses {
+                license {
+                    name 'MIT'
+                    url 'https://raw.githubusercontent.com/priimak/functional-pebbles/master/LICENSE'
+                    distribution 'repo'
+                }
+            }
+            scm {
+                url 'https://github.com/priimak/functional-pebbles'
+                connection 'scm:git:git://github.com/priimak/functional-pebbles.git'
+                developerConnection 'scm:git:ssh://git@github.com:priimak/functional-pebbles.git'
+            }
+            developers {
+                developer {
+                    name 'Dmitri Priimak'
+                }
+            }
+        }
+    }
+}
+
+model {
+    tasks.publishMavenJavaPublicationToMavenLocal {
+        dependsOn project.tasks.signArchives
+    }
+    tasks.publishMavenJavaPublicationToMavenRepository {
+        dependsOn project.tasks.signArchives
+    }
 }
