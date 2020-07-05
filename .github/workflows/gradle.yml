@@ -23,4 +23,4 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gw
     - name: Build with Gradle
-      run: ./gw clean build -PsonatypeUsername=test -PsonatypePassword=test
+      run: ./gw clean test -PsonatypeUsername=test -PsonatypePassword=test
