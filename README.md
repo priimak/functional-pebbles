@@ -2,6 +2,7 @@
 [![License](https://img.shields.io/:license-MIT-blue.svg)](https://raw.githubusercontent.com/priimak/functional-pebbles/master/LICENSE)
 ![Build](https://github.com/priimak/functional-pebbles/workflows/Java%20CI%20with%20Gradle/badge.svg)
 [![Maven Central](https://img.shields.io/maven-central/v/xyz.devfortress.functional.pebbles/functional-pebbles-core.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22xyz.devfortress.functional.pebbles%22%20AND%20a:%22functional-pebbles-core%22)
+[![javadoc](https://javadoc.io/badge2/xyz.devfortress.functional.pebbles/functional-pebbles-core/javadoc.svg)](https://javadoc.io/doc/xyz.devfortress.functional.pebbles/functional-pebbles-core) 
 
 Functional pebbles is a set of classes intended to facilitate programming functional style 
 in Java. Many of the classes copy functionality from similarly named classes in Scala, 
@@ -29,3 +30,5 @@ and in gradle
 ```sh
 implementation 'xyz.devfortress.functional.pebbles:functional-pebbles-core:1.0.0'
 ```
+
+Javadoc is available here https://javadoc.io/doc/xyz.devfortress.functional.pebbles/functional-pebbles-core 
